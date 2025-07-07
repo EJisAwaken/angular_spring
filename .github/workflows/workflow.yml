@@ -42,6 +42,9 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
           tags: type=raw,value=latest
 
+      - name: lister les fichiers dans frontend
+        run: ls -la ./frontend
+
       - name: Build et push frontend
         id: pushfront
         uses: docker/build-push-action@v5
