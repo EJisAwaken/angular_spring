@@ -69,21 +69,21 @@ jobs:
           subject-digest: ${{ steps.pushfront.outputs.digest }}
           push-to-registry: true
 
-
-  deploy:
-    needs: [build-push-image-front-back]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
-          chmod 600 ~/.ssh/id_ed25519
-          ssh-keyscan -H 209.38.118.77 >> ~/.ssh/known_hosts
-
-      - name: SSH to remote server and deploy
-        run: |
-          ssh -i ~/.ssh/id_ed25519 root@209.38.118.77 << 'EOF'
-          echo ${{secrets.TOKEN}} | docker login ghcr.io -u josefa613 --password-stdin
-#          cd ~ & docker compose up -d
-          EOF
+#
+#  deploy:
+#    needs: [build-push-image-front-back]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Setup SSH
+#        run: |
+#          mkdir -p ~/.ssh
+#          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+#          chmod 600 ~/.ssh/id_ed25519
+#          ssh-keyscan -H 209.38.118.77 >> ~/.ssh/known_hosts
+#
+#      - name: SSH to remote server and deploy
+#        run: |
+#          ssh -i ~/.ssh/id_ed25519 root@209.38.118.77 << 'EOF'
+#          echo ${{secrets.TOKEN}} | docker login ghcr.io -u josefa613 --password-stdin
+##          cd ~ & docker compose up -d
+#          EOF
