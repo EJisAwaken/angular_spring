@@ -24,9 +24,6 @@ jobs:
       - name: build du frontend
         run: npm run build
 
-      - name: Création de l'image docker
-        working-directory: ./frontend
-        run: docker
 
   backend:
     runs-on: ubuntu-latest
