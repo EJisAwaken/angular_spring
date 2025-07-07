@@ -4,37 +4,86 @@ on:
     branches:
       - main
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
 jobs:
-  frontend:
+  build-push-image-front-back:
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+
     runs-on: ubuntu-latest
     steps:
       - name: Recuperation du code dans github
         uses: actions/checkout@v4
 
-      - name: Installation des dépendances
-        working-directory: ./frontend
-        run: npm install
+      - name: Log in to the Container registry
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Installation de chrome
-        run: sudo apt upgrade google-chrome-stable
+      - name: Extract metadata for frontend
+        id: meta_front
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          tags: type=raw,value=latest
 
-      - name: Lancement de la commande test de angular
-        run: npm run test
+      - name: Extract metadata for backend
+        id: meta_back
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend
+          tags: type=raw,value=latest
 
-      - name: build du frontend
-        run: npm run build
+      - name: Build et push frontend
+        id: pushfront
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          push: true
+          tags: ${{ steps.meta_front.outputs.tags }}
+          labels: ${{ steps.meta_front.outputs.labels }}
+          target: prod
 
 
-  backend:
+      - name: Build et push backend
+        id: pushback
+        uses: docker/build-push-action@v5
+        with:
+          context: ./first-api
+          push: true
+          tags: ${{ steps.meta_back.outputs.tags }}
+          labels: ${{ steps.meta_back.outputs.labels }}
+
+      - name: Generate attestation frontend
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend
+          subject-digest: ${{ steps.pushfront.outputs.digest }}
+          push-to-registry: true
+
+
+  deploy:
+    needs: [build-push-image-front-back]
     runs-on: ubuntu-latest
     steps:
-      - name: Recuperation du code dans github
-        uses: actions/checkout@v4
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H 209.38.118.77 >> ~/.ssh/known_hosts
 
-      - name: Installation des dependences
-        working-directory: first-api
-        run: npm
-
-
-
-
+      - name: SSH to remote server and deploy
+        run: |
+          ssh -i ~/.ssh/id_ed25519 root@209.38.118.77 << 'EOF'
+          echo ${{secrets.TOKEN}} | docker login ghcr.io -u josefa613 --password-stdin
+#          cd ~ & docker compose up -d
+          EOF
