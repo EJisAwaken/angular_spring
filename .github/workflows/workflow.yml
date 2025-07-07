@@ -46,7 +46,7 @@ jobs:
         id: pushfront
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: ./frontend/
           push: true
           tags: ${{ steps.meta_front.outputs.tags }}
           labels: ${{ steps.meta_front.outputs.labels }}
@@ -57,7 +57,7 @@ jobs:
         id: pushback
         uses: docker/build-push-action@v5
         with:
-          context: ./first-api
+          context: ./first-api/
           push: true
           tags: ${{ steps.meta_back.outputs.tags }}
           labels: ${{ steps.meta_back.outputs.labels }}
